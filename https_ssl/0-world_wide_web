@@ -4,19 +4,18 @@
 # Function to get subdomain info
 get_subdomain_info() {
     local full_domain=$1
-    # Run dig and extract record type and destination
-    local info=$(dig $full_domain | awk '/ANSWER SECTION:/ {getline; print $1, $4, $5}')
-    local record_type=$(echo $info | awk '{print $2}')
-    local destination=$(echo $info | awk '{print $3}')
-    # Extract only the subdomain (before the first dot)
+    # Get the IP address using dig +short
+    local ip=$(dig +short $full_domain)
+    # Extract only the subdomain name
     local subdomain=$(echo $full_domain | awk -F. '{print $1}')
-    echo "The subdomain ${subdomain} is a ${record_type} record and points to ${destination}"
+    # Print in required format
+    echo "The subdomain ${subdomain} is a A record and points to ${ip}"
 }
 
 DOMAIN=$1
 SUBDOMAIN=$2
 
-# Array of subdomains in the required order
+# Array of subdomains in required order
 SUBDOMAINS=("www" "lb-01" "web-01" "web-02")
 
 if [ -z "$SUBDOMAIN" ]; then
@@ -28,4 +27,3 @@ else
     # Only check the specified subdomain
     get_subdomain_info "$SUBDOMAIN.$DOMAIN"
 fi
-
