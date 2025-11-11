@@ -16,7 +16,7 @@ DOMAIN=$1
 SUBDOMAIN=$2
 
 # Array of subdomains in required order
-SUBDOMAINS=("www" "lb-01" "web-01" "web-02")
+SUBDOMAINS=("www" "6929-lb-01" "6929-web-01" "6929-web-02")
 
 if [ -z "$SUBDOMAIN" ]; then
     # Loop through all subdomains
