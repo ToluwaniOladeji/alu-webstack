@@ -6,10 +6,11 @@ get_subdomain_info() {
     local full_domain=$1
     # Run dig and extract record type and destination
     local info=$(dig $full_domain | awk '/ANSWER SECTION:/ {getline; print $1, $4, $5}')
-    local subdomain=$(echo $info | awk '{print $1}')
     local record_type=$(echo $info | awk '{print $2}')
     local destination=$(echo $info | awk '{print $3}')
-    echo "The subdomain ${subdomain%?} is a ${record_type} record and points to ${destination}"
+    # Extract only the subdomain (before the first dot)
+    local subdomain=$(echo $full_domain | awk -F. '{print $1}')
+    echo "The subdomain ${subdomain} is a ${record_type} record and points to ${destination}"
 }
 
 DOMAIN=$1
