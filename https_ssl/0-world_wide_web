@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
-# Script to display information about subdomains for a given domain
+# Script to display DNS information for subdomains of a given domain
 
-# Function to get subdomain info
+# Function to display info for a single subdomain
 get_subdomain_info() {
-    local full_domain=$1
-    # Get the IP address using dig +short
+    local sub=$1
+    local domain=$2
+    local full_domain="${sub}.${domain}"
+    # Get the A record IP
     local ip=$(dig +short $full_domain)
-    # Extract only the subdomain name
-    local subdomain=$(echo $full_domain | awk -F. '{print $1}')
-    # Print in required format
-    echo "The subdomain ${subdomain} is a A record and points to ${ip}"
+    echo "The subdomain ${sub} is a A record and points to ${ip}"
 }
 
+# Main script
 DOMAIN=$1
 SUBDOMAIN=$2
 
-# Array of subdomains in required order
-SUBDOMAINS=("www" "6929-lb-01" "6929-web-01" "6929-web-02")
+# Exact subdomains expected by ALU
+SUBDOMAINS=("www" "lb-01" "web-01" "web-02")
 
 if [ -z "$SUBDOMAIN" ]; then
-    # Loop through all subdomains
+    # Loop through all subdomains in the required order
     for sub in "${SUBDOMAINS[@]}"; do
-        get_subdomain_info "$sub.$DOMAIN"
+        get_subdomain_info $sub $DOMAIN
     done
 else
     # Only check the specified subdomain
-    get_subdomain_info "$SUBDOMAIN.$DOMAIN"
+    get_subdomain_info $SUBDOMAIN $DOMAIN
 fi
