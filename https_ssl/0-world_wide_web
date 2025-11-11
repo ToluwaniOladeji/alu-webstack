@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Script to display information about subdomains for a given domain
+
+# Function to get subdomain info
+get_subdomain_info() {
+    local full_domain=$1
+    # Run dig and extract record type and destination
+    local info=$(dig $full_domain | awk '/ANSWER SECTION:/ {getline; print $1, $4, $5}')
+    local subdomain=$(echo $info | awk '{print $1}')
+    local record_type=$(echo $info | awk '{print $2}')
+    local destination=$(echo $info | awk '{print $3}')
+    echo "The subdomain ${subdomain%?} is a ${record_type} record and points to ${destination}"
+}
+
+DOMAIN=$1
+SUBDOMAIN=$2
+
+# Array of subdomains in the required order
+SUBDOMAINS=("www" "lb-01" "web-01" "web-02")
+
+if [ -z "$SUBDOMAIN" ]; then
+    # Loop through all subdomains
+    for sub in "${SUBDOMAINS[@]}"; do
+        get_subdomain_info "$sub.$DOMAIN"
+    done
+else
+    # Only check the specified subdomain
+    get_subdomain_info "$SUBDOMAIN.$DOMAIN"
+fi
+
