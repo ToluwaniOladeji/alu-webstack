@@ -6,14 +6,18 @@ get_subdomain_info() {
     local subdomain="$2"
     local full_sub="${subdomain}.${domain}"
 
-    # Use dig and awk to cleanly extract the A record
+    # Extract the A record line properly
     local result
-    result=$(dig "$full_sub" A | awk '/IN[[:space:]]+A/ {print $5; exit}')
+    result=$(dig "$full_sub" | grep -A1 "ANSWER SECTION:" | tail -n1)
 
-    if [[ -n "$result" ]]; then
-        echo "The subdomain ${subdomain} is a A record and points to ${result}"
-    else
-        echo "The subdomain ${subdomain} could not be resolved"
+    # Extract record type and destination using awk
+    local record_type
+    record_type=$(echo "$result" | awk '{print $4}')
+    local destination
+    destination=$(echo "$result" | awk '{print $5}')
+
+    if [[ -n "$record_type" && -n "$destination" ]]; then
+        echo "The subdomain ${subdomain} is a ${record_type} record and points to ${destination}"
     fi
 }
 
@@ -25,8 +29,10 @@ if [[ -z "$domain" ]]; then
     exit 1
 fi
 
+# Default subdomains
 subs=("www" "lb-01" "web-01" "web-02")
 
+# Check either specific subdomain or all four
 if [[ -n "$subdomain" ]]; then
     get_subdomain_info "$domain" "$subdomain"
 else
