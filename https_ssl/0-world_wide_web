@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Displays information about DNS subdomains of a given domain
+# Displays information about DNS subdomains of a given domain using dig
 
 # Function to query a subdomain
 get_subdomain_info() {
@@ -7,17 +7,23 @@ get_subdomain_info() {
     local subdomain="$2"
     local full_sub="${subdomain}.${domain}"
 
-    result=$(dig "$full_sub" | grep -A1 "ANSWER SECTION:" | tail -n1)
+    # Query DNS record using dig and filter the actual IP line
+    local result
+    result=$(dig +short "$full_sub" A)
 
-    record_type=$(echo "$result" | awk '{print $4}')
-    destination=$(echo "$result" | awk '{print $5}')
+    # If result is empty, it might be a CNAME — handle that too
+    if [[ -z "$result" ]]; then
+        result=$(dig +short "$full_sub")
+    fi
 
-    if [[ -n "$record_type" && -n "$destination" ]]; then
-        echo "The subdomain ${subdomain} is a ${record_type} record and points to ${destination}"
+    if [[ -n "$result" ]]; then
+        echo "The subdomain ${subdomain} is a A record and points to ${result}"
+    else
+        echo "The subdomain ${subdomain} could not be resolved"
     fi
 }
 
-# Main script logic
+# Main logic
 domain="$1"
 subdomain="$2"
 
@@ -27,10 +33,10 @@ if [[ -z "$domain" ]]; then
     exit 1
 fi
 
-# List of default subdomains
+# Default subdomains
 subs=("www" "lb-01" "web-01" "web-02")
 
-# If a subdomain is provided, check only that one
+# If subdomain provided, check only that one
 if [[ -n "$subdomain" ]]; then
     get_subdomain_info "$domain" "$subdomain"
 else
