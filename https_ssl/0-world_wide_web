@@ -1,29 +1,40 @@
 #!/usr/bin/env bash
-# Script to display DNS information for subdomains of a given domain
+# Displays information about DNS subdomains of a given domain
 
-# Function to display info for a single subdomain
+# Function to query a subdomain
 get_subdomain_info() {
-    local sub=$1
-    local domain=$2
-    local full_domain="${sub}.${domain}"
-    # Get the A record IP
-    local ip=$(dig +short $full_domain)
-    echo "The subdomain ${sub} is a A record and points to ${ip}"
+    local domain="$1"
+    local subdomain="$2"
+    local full_sub="${subdomain}.${domain}"
+
+    result=$(dig "$full_sub" | grep -A1 "ANSWER SECTION:" | tail -n1)
+
+    record_type=$(echo "$result" | awk '{print $4}')
+    destination=$(echo "$result" | awk '{print $5}')
+
+    if [[ -n "$record_type" && -n "$destination" ]]; then
+        echo "The subdomain ${subdomain} is a ${record_type} record and points to ${destination}"
+    fi
 }
 
-# Main script
-DOMAIN=$1
-SUBDOMAIN=$2
+# Main script logic
+domain="$1"
+subdomain="$2"
 
-# Exact subdomains expected by ALU
-SUBDOMAINS=("www" "lb-01" "web-01" "web-02")
+# Validate input
+if [[ -z "$domain" ]]; then
+    echo "Usage: $0 domain [subdomain]"
+    exit 1
+fi
 
-if [ -z "$SUBDOMAIN" ]; then
-    # Loop through all subdomains in the required order
-    for sub in "${SUBDOMAINS[@]}"; do
-        get_subdomain_info $sub $DOMAIN
-    done
+# List of default subdomains
+subs=("www" "lb-01" "web-01" "web-02")
+
+# If a subdomain is provided, check only that one
+if [[ -n "$subdomain" ]]; then
+    get_subdomain_info "$domain" "$subdomain"
 else
-    # Only check the specified subdomain
-    get_subdomain_info $SUBDOMAIN $DOMAIN
+    for s in "${subs[@]}"; do
+        get_subdomain_info "$domain" "$s"
+    done
 fi
